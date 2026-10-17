@@ -8,18 +8,22 @@ lit by a golden-hour sun, with twin afterburners and a glowing atmosphere.
 
 ## Features
 
+- **Physically based rendering** (`panda3d-simplepbr`): metal/roughness
+  shading, normal maps, HDR **filmic tonemapping**, and **image-based lighting**
+  from a scene-matched environment map (ambient + reflections on the airframe)
 - **High-detail Su-57 glTF model** (landing gear retracted, nozzles located for
   the afterburner), loaded via `panda3d-gltf`
 - **Edge-of-space world**: the curved Earth below (NASA Blue Marble), a star
   field, and a real-time **atmosphere limb glow** (custom GLSL fresnel shader)
-- **Golden-hour lighting** — a warm low sun, cool earthshine fill, and a bloom
-  post-process so the sun and afterburners flare
+- **Golden-hour lighting** — a warm low HDR sun with a cool earthshine fill
 - **Twin afterburner** with dynamic engine lights that flare with throttle
 - Arcade flight model: pitch / roll / yaw, throttle, afterburner boost
 - Smooth chase camera with speed-reactive field of view
 - Heads-up display: airspeed, Mach, altitude and heading
 
 If the Su-57 model is missing, the sim falls back to a procedural jet.
+
+Run it in a window (the PBR pipeline needs an on-screen OpenGL context).
 
 ## Install
 
@@ -65,3 +69,4 @@ The simulator source code in this repository is free to use and modify.
 - Python 3.9+
 - Panda3D 1.10+
 - panda3d-gltf
+- panda3d-simplepbr
