@@ -13,10 +13,11 @@ lit by a golden-hour sun, with twin afterburners and a glowing atmosphere.
   from a scene-matched environment map (ambient + reflections on the airframe)
 - **High-detail Su-57 glTF model** (landing gear retracted, nozzles located for
   the afterburner), loaded via `panda3d-gltf`
-- **Edge-of-space world** with real photographic textures: a 4K Earth day map
-  on the curved globe, a real **Milky Way** starfield across the sky, and a
-  real-time **atmosphere limb glow** (custom GLSL fresnel shader)
-- **Golden-hour lighting** — a warm low HDR sun with a cool earthshine fill
+- **Edge-of-space world** with real photographic textures: a 4K cloudy Earth
+  (NASA-derived day map + cloud layer) on the curved globe, a real **Milky Way**
+  starfield across the sky, and a real-time **atmosphere limb glow**
+- **Golden-hour lighting** — a warm low HDR sun on the jet, with the Earth lit
+  by its own neutral daylight so the oceans stay deep blue
 - **Twin afterburner** with dynamic engine lights that flare with throttle
 - Arcade flight model: pitch / roll / yaw, throttle, afterburner boost
 - Smooth chase camera with speed-reactive field of view
@@ -60,8 +61,9 @@ python main.py
 - **Earth and Milky Way textures** — by [Solar System Scope](https://www.solarsystemscope.com/textures/),
   licensed **CC BY 4.0**, downloaded from Wikimedia Commons
   ([Earth day map](https://commons.wikimedia.org/wiki/File:Solarsystemscope_texture_8k_earth_daymap.jpg),
-  [Milky Way](https://commons.wikimedia.org/wiki/File:Solarsystemscope_texture_8k_stars_milky_way.jpg))
-  and downscaled to 4K.
+  [cloud layer](https://commons.wikimedia.org/wiki/File:Solarsystemscope_texture_8k_earth_clouds.jpg),
+  [Milky Way](https://commons.wikimedia.org/wiki/File:Solarsystemscope_texture_8k_stars_milky_way.jpg)).
+  The day map and clouds are composited into one 4K `earth_surface.jpg`.
 
 Because the Su-57 model is **CC BY-NC-SA 4.0**, this project is for
 **non-commercial use** and must keep the attribution above.
