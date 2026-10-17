@@ -64,3 +64,53 @@ def box(parent, size, pos=(0, 0, 0), hpr=(0, 0, 0), color=(1, 1, 1, 1),
     if two_sided:
         np.setTwoSided(True)
     return np
+
+
+def make_uv_sphere(radius=1.0, lat=48, lon=96, invert=False):
+    """A UV sphere (pole on +Z) with normals and equirectangular texcoords.
+
+    ``invert`` flips the winding and normals so the sphere is seen from inside
+    (used for the star dome).
+    """
+    import math
+
+    fmt = GeomVertexFormat.getV3n3t2()
+    vdata = GeomVertexData("sphere", fmt, Geom.UHStatic)
+    vdata.setNumRows((lat + 1) * (lon + 1))
+    vertex = GeomVertexWriter(vdata, "vertex")
+    normal = GeomVertexWriter(vdata, "normal")
+    texcoord = GeomVertexWriter(vdata, "texcoord")
+
+    for i in range(lat + 1):
+        theta = math.pi * i / lat          # 0 at north pole (+Z)
+        st, ct = math.sin(theta), math.cos(theta)
+        for j in range(lon + 1):
+            phi = 2.0 * math.pi * j / lon
+            x = st * math.cos(phi)
+            y = st * math.sin(phi)
+            z = ct
+            vertex.addData3(x * radius, y * radius, z * radius)
+            n = -1.0 if invert else 1.0
+            normal.addData3(x * n, y * n, z * n)
+            texcoord.addData2(j / lon, 1.0 - i / lat)
+
+    tris = GeomTriangles(Geom.UHStatic)
+    row = lon + 1
+    for i in range(lat):
+        for j in range(lon):
+            a = i * row + j
+            b = a + 1
+            c = a + row
+            d = c + 1
+            if invert:
+                tris.addVertices(a, c, b)
+                tris.addVertices(b, c, d)
+            else:
+                tris.addVertices(a, b, c)
+                tris.addVertices(b, d, c)
+
+    geom = Geom(vdata)
+    geom.addPrimitive(tris)
+    node = GeomNode("sphere")
+    node.addGeom(geom)
+    return node
