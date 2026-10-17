@@ -115,20 +115,29 @@ class Scene:
 
     def _build_earth(self, tex_path):
         earth = self.base.render.attachNewNode(make_uv_sphere(EARTH_RADIUS, 96, 192))
-        earth.setTexture(_load_texture(self.base, tex_path), 1)
+        tex = _load_texture(self.base, tex_path)
+        tex.setWrapU(Texture.WMRepeat)
+        earth.setTexture(tex, 1)
         mat = Material("earth")
         mat.setBaseColor((1, 1, 1, 1))
         mat.setMetallic(0.0)
-        mat.setRoughness(0.92)
+        mat.setRoughness(0.58)        # a little ocean sheen
         earth.setMaterial(mat, 1)
+        # Light the Earth with its own neutral, bright daylight - decoupled from
+        # the warm golden-hour sun that lights the jet - so the oceans read as
+        # deep blue instead of being washed warm.
+        earth.setLightOff()
+        day_sun = DirectionalLight("earth_sun")
+        day_sun.setColor((2.2, 2.35, 2.6, 1))
+        sun_np = earth.attachNewNode(day_sun)
+        sun_np.setHpr(*SUN_HPR)
+        earth.setLight(sun_np)
+        amb = AmbientLight("earth_amb")
+        amb.setColor((0.14, 0.18, 0.26, 1))
+        earth.setLight(earth.attachNewNode(amb))
         earth.setPos(0, 0, EARTH_SURFACE_Z - EARTH_RADIUS)
         earth.setP(62)            # tilt so continents, not the pole, face up
         earth.setH(120)
-        # A dedicated fill just for the Earth so it stays readable while the jet
-        # and sky keep a low, moody ambient.
-        earth_fill = AmbientLight("earth_fill")
-        earth_fill.setColor((0.10, 0.12, 0.17, 1))
-        earth.setLight(earth.attachNewNode(earth_fill))
         return earth
 
     def _build_atmosphere(self):

@@ -64,7 +64,7 @@ class JetSimApp(ShowBase):
 
         self.scene = Scene(
             self,
-            os.path.join(_ASSETS, "earth_day.jpg"),
+            os.path.join(_ASSETS, "earth_surface.jpg"),
             os.path.join(_ASSETS, "milkyway.jpg"),
         )
         self.jet, anchors = build_jet(self.render, os.path.join(_ASSETS, "su57.glb"))
