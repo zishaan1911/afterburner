@@ -33,8 +33,6 @@ def _build_glb(parent, model_path):
     import gltf
 
     inner = NodePath(gltf.load_model(model_path))
-    inner.setMaterialOff(1)       # drop metallic PBR mats -> textures as diffuse
-    inner.setColorScale(0.60, 0.64, 0.72, 1)   # moodier, cooler stealth grey
 
     for np in inner.findAllMatches("**"):
         name = np.getName().lower()
