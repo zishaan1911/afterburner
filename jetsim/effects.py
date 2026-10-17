@@ -8,8 +8,9 @@ ADDITIVE = ColorBlendAttrib.make(
     ColorBlendAttrib.MAdd, ColorBlendAttrib.OIncomingAlpha, ColorBlendAttrib.OOne
 )
 
-# Billboarded flame blobs: (distance behind the nozzle, base radius).
-_PLUME = ((0.3, 0.42), (1.0, 0.32), (1.9, 0.20), (2.9, 0.11))
+# Billboarded flame blobs: (distance behind the nozzle, base radius), sized for
+# the ~20 m Su-57.
+_PLUME = ((0.45, 0.6), (1.5, 0.46), (2.8, 0.3), (4.2, 0.17))
 
 
 class Afterburner:
@@ -34,10 +35,10 @@ class Afterburner:
                 self.sprites.append((sprite, radius, dist))
 
             light = PointLight("engine")
-            light.setColor((0.5, 0.25, 0.08, 1))
-            light.setAttenuation((1.0, 0.0, 0.010))
+            light.setColor((0.6, 0.3, 0.1, 1))
+            light.setAttenuation((1.0, 0.0, 0.003))
             light_np = anchor.attachNewNode(light)
-            light_np.setPos(0, -0.8, 0)
+            light_np.setPos(0, -1.5, 0)
             render.setLight(light_np)
             self.lights.append((light, light_np))
 

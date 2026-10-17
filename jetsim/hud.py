@@ -50,11 +50,11 @@ class Hud:
     def update(self, flight):
         boost = "  AB" if flight.boosting else ""
         self.readout.setText(
-            "SPD  %4.0f\n"
-            "MACH %4.2f\n"
-            "ALT  %5.0f\n"
-            "HDG  %03.0f%s"
-            % (flight.speed, flight.mach, flight.altitude, flight.heading, boost)
+            "SPD   %4.0f\n"
+            "MACH  %4.2f\n"
+            "ALT   %4.1f km\n"
+            "HDG   %03.0f%s"
+            % (flight.speed, flight.mach, flight.altitude_km, flight.heading, boost)
         )
         self.throttle_fill.setScale(max(0.001, flight.throttle), 1, 1)
         color = AMBER if flight.boosting else GREEN
