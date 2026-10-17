@@ -1,30 +1,35 @@
 """Tunable constants and small math helpers for the simulator."""
 
-# --- Terrain ---------------------------------------------------------------
-TERRAIN_SIZE = 257          # heightfield resolution (must be 2^n + 1)
-HSCALE = 16.0               # world units per heightfield pixel
-ZSCALE = 130.0              # vertical scale of the terrain
+# --- Jet -------------------------------------------------------------------
+JET_SCALE = 1.0             # the Su-57 glTF is modelled in metres (~20 m long)
+
+# --- Edge-of-space scene ---------------------------------------------------
+EARTH_RADIUS = 3200.0       # world units
+EARTH_SURFACE_Z = -430.0    # top of the globe sits this far below the origin
+ATMO_THICKNESS = 170.0      # atmosphere shell thickness
+STAR_RADIUS = 9000.0        # star dome radius
+STAR_COUNT = 1400
+# Sun direction (heading, pitch) in degrees - low on the horizon for golden hour
+SUN_HPR = (52.0, -8.0, 0.0)
 
 # --- Flight model ----------------------------------------------------------
-MIN_SPEED = 45.0            # units/second with the throttle closed
-MAX_SPEED = 340.0           # units/second at full military throttle
-BOOST_SPEED = 470.0         # units/second with the afterburner lit
-PITCH_RATE = 55.0           # degrees/second
-ROLL_RATE = 135.0           # degrees/second
-YAW_RATE = 28.0             # degrees/second
+MIN_SPEED = 60.0            # units/second with the throttle closed
+MAX_SPEED = 420.0           # units/second at full military throttle
+BOOST_SPEED = 620.0         # units/second with the afterburner lit
+PITCH_RATE = 42.0           # degrees/second
+ROLL_RATE = 115.0           # degrees/second
+YAW_RATE = 22.0             # degrees/second
 THROTTLE_RATE = 0.6         # throttle units/second
-GRAVITY = 42.0              # downward drift when slow
-LIFT_SPEED = 150.0          # speed at which lift fully counters gravity
-START_ALT = 240.0           # spawn altitude
-MAX_ALT = 980.0             # altitude ceiling
-GROUND_CLEARANCE = 9.0      # minimum height above the terrain
+START_ALT = 60.0            # spawn altitude above the origin plane
+FLOOR_Z = -360.0            # don't descend into the atmosphere/Earth
+CEILING_Z = 1600.0          # altitude ceiling
 
 # --- Camera ----------------------------------------------------------------
-CAM_DISTANCE = 17.0
-CAM_HEIGHT = 4.5
-CAM_LAG = 4.5
-BASE_FOV = 62.0
-MAX_FOV = 84.0
+CAM_DISTANCE = 27.0
+CAM_HEIGHT = 7.0
+CAM_LAG = 4.0
+BASE_FOV = 60.0
+MAX_FOV = 80.0
 
 
 def clamp(value, low, high):
