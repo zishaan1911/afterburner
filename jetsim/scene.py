@@ -16,6 +16,7 @@ from panda3d.core import (
     GeomVertexFormat,
     GeomVertexWriter,
     Filename,
+    Material,
     NodePath,
     Shader,
     Texture,
@@ -60,33 +61,32 @@ out vec4 o_color;
 void main() {
     vec3 V = normalize(campos - wP);
     vec3 N = normalize(wN);
-    float rim = pow(1.0 - max(dot(N, V), 0.0), 2.6);
+    float rim = pow(1.0 - max(dot(N, V), 0.0), 3.0);
     float s = max(dot(N, sundir), 0.0);
-    vec3 col = mix(vec3(0.20, 0.42, 1.0), vec3(1.0, 0.52, 0.18), pow(s, 1.3));
-    o_color = vec4(col * rim, rim);
+    vec3 col = mix(vec3(0.22, 0.45, 1.0), vec3(1.0, 0.5, 0.16), pow(s, 1.3));
+    o_color = vec4(col * rim * 2.1, rim);
 }
 """
 
 
 def setup_lights(render):
     """Warm low sun, deep ambient, and a cool earthshine fill from below."""
+    # Intensities are HDR (tonemapped by simplepbr), hence the > 1 values.
     sun = DirectionalLight("sun")
-    sun.setColor((1.18, 0.80, 0.46, 1))
+    sun.setColor((3.4, 2.2, 1.3, 1))          # warm golden-hour key light
     sun_np = render.attachNewNode(sun)
     sun_np.setHpr(*SUN_HPR)
     render.setLight(sun_np)
 
     ambient = AmbientLight("ambient")
-    ambient.setColor((0.15, 0.17, 0.24, 1))
+    ambient.setColor((0.10, 0.12, 0.18, 1))   # cool sky/earthshine fill
     render.setLight(render.attachNewNode(ambient))
 
     fill = DirectionalLight("earthshine")
-    fill.setColor((0.10, 0.15, 0.26, 1))
+    fill.setColor((0.14, 0.20, 0.32, 1))
     fill_np = render.attachNewNode(fill)
     fill_np.setHpr(0, 82, 0)
     render.setLight(fill_np)
-
-    render.setShaderAuto()
     return sun_np
 
 
@@ -109,7 +109,7 @@ class Scene:
     def _build_space_dome(self):
         dome = self.base.render.attachNewNode(
             make_uv_sphere(STAR_RADIUS * 1.6, 24, 48, invert=True))
-        dome.setColor(0.015, 0.025, 0.06, 1)
+        dome.setColor(0.003, 0.005, 0.014, 1)
         dome.setLightOff()
         dome.setShaderOff()
         dome.setDepthWrite(False)
@@ -123,13 +123,18 @@ class Scene:
         tex.setMinfilter(Texture.FTLinearMipmapLinear)
         tex.setMagfilter(Texture.FTLinear)
         earth.setTexture(tex, 1)
+        mat = Material("earth")
+        mat.setBaseColor((1, 1, 1, 1))
+        mat.setMetallic(0.0)
+        mat.setRoughness(0.92)
+        earth.setMaterial(mat, 1)
         earth.setPos(0, 0, EARTH_SURFACE_Z - EARTH_RADIUS)
         earth.setP(62)            # tilt so continents, not the pole, face up
         earth.setH(120)
         # A dedicated fill just for the Earth so it stays bright and blue while
         # the jet and sky keep a low, moody ambient.
         earth_fill = AmbientLight("earth_fill")
-        earth_fill.setColor((0.85, 0.90, 0.98, 1))
+        earth_fill.setColor((0.10, 0.12, 0.17, 1))
         earth.setLight(earth.attachNewNode(earth_fill))
         return earth
 
