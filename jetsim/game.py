@@ -3,8 +3,10 @@
 import os
 import sys
 
+import simplepbr
+from simplepbr import EnvMap
 from direct.showbase.ShowBase import ShowBase
-from panda3d.core import AntialiasAttrib, ClockObject, loadPrcFileData
+from panda3d.core import ClockObject, Filename, loadPrcFileData
 
 from .config import (
     BASE_FOV,
@@ -12,9 +14,10 @@ from .config import (
     CAM_DISTANCE,
     CAM_HEIGHT,
     CAM_LAG,
+    EXPOSURE,
     MAX_FOV,
 )
-from .effects import Afterburner, setup_bloom
+from .effects import Afterburner
 from .flight import Controls, FlightModel
 from .hud import Hud
 from .jet import build_jet
@@ -36,8 +39,28 @@ class JetSimApp(ShowBase):
     def __init__(self):
         ShowBase.__init__(self)
         self.disableMouse()
-        self.render.setAntialias(AntialiasAttrib.MAuto)
         self.camLens.setNearFar(0.5, 40000)
+
+        # Physically based rendering pipeline: metal/roughness, normal maps,
+        # HDR filmic tonemapping, and image-based lighting from a scene-matched
+        # environment map (ambient + reflections on the airframe).
+        env_path = os.path.join(_ASSETS, "env.png")
+        env_map = None
+        if os.path.exists(env_path):
+            try:
+                env_map = EnvMap.from_file_path(
+                    Filename.fromOsSpecific(env_path), blocking_prepare=True)
+            except Exception as exc:  # pragma: no cover
+                print("env map load failed:", exc)
+        self.pipeline = simplepbr.init(
+            msaa_samples=4,
+            use_normal_maps=True,
+            use_emission_maps=True,
+            use_occlusion_maps=True,
+            enable_shadows=False,
+            exposure=EXPOSURE,
+            env_map=env_map,
+        )
 
         self.scene = Scene(self, os.path.join(_ASSETS, "earth_atmos_2048.jpg"))
         self.jet, anchors = build_jet(self.render, os.path.join(_ASSETS, "su57.glb"))
@@ -45,7 +68,6 @@ class JetSimApp(ShowBase):
         self.flight = FlightModel(self.jet)
         self.flight.reset()
         self.hud = Hud(self)
-        self.filters = setup_bloom(self)
 
         self._snap_camera()
         self._bind_keys()

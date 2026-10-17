@@ -24,6 +24,9 @@ START_ALT = 60.0            # spawn altitude above the origin plane
 FLOOR_Z = -360.0            # don't descend into the atmosphere/Earth
 CEILING_Z = 1600.0          # altitude ceiling
 
+# --- Rendering -------------------------------------------------------------
+EXPOSURE = 0.0              # simplepbr filmic-tonemap exposure stops
+
 # --- Camera ----------------------------------------------------------------
 CAM_DISTANCE = 27.0
 CAM_HEIGHT = 7.0
