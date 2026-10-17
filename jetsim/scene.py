@@ -1,23 +1,13 @@
-"""Edge-of-space scene: the curved Earth below, atmosphere limb glow, a star
-field, a golden-hour sun and warm/earthshine lighting."""
-
-import math
-import random
+"""Edge-of-space scene: the curved Earth below, a real Milky Way sky, an
+atmosphere limb glow, a golden-hour sun and warm/earthshine lighting."""
 
 from panda3d.core import (
     AmbientLight,
     CardMaker,
     ColorBlendAttrib,
     DirectionalLight,
-    Geom,
-    GeomNode,
-    GeomPoints,
-    GeomVertexData,
-    GeomVertexFormat,
-    GeomVertexWriter,
     Filename,
     Material,
-    NodePath,
     Shader,
     Texture,
     TransparencyAttrib,
@@ -28,7 +18,6 @@ from .config import (
     ATMO_THICKNESS,
     EARTH_RADIUS,
     EARTH_SURFACE_Z,
-    STAR_COUNT,
     STAR_RADIUS,
     SUN_HPR,
 )
@@ -69,6 +58,13 @@ void main() {
 """
 
 
+def _load_texture(base, path):
+    tex = base.loader.loadTexture(Filename.fromOsSpecific(path))
+    tex.setMinfilter(Texture.FTLinearMipmapLinear)
+    tex.setMagfilter(Texture.FTLinear)
+    return tex
+
+
 def setup_lights(render):
     """Warm low sun, deep ambient, and a cool earthshine fill from below."""
     # Intensities are HDR (tonemapped by simplepbr), hence the > 1 values.
@@ -91,25 +87,25 @@ def setup_lights(render):
 
 
 class Scene:
-    def __init__(self, base, earth_tex_path):
+    def __init__(self, base, earth_tex_path, milkyway_path):
         self.base = base
         render = base.render
-        base.setBackgroundColor(0.012, 0.02, 0.05)
+        base.setBackgroundColor(0.0, 0.0, 0.0)
 
         self.sun_np = setup_lights(render)
         self.sun_dir = -self.sun_np.getQuat(render).getForward()
 
-        self.dome = self._build_space_dome()
+        self.dome = self._build_space_dome(milkyway_path)
         self.earth = self._build_earth(earth_tex_path)
-        self.stars = self._build_stars()
         self.atmo = self._build_atmosphere()
         self.sun_sprite = self._build_sun()
 
     # -- construction ------------------------------------------------------
-    def _build_space_dome(self):
+    def _build_space_dome(self, milkyway_path):
         dome = self.base.render.attachNewNode(
-            make_uv_sphere(STAR_RADIUS * 1.6, 24, 48, invert=True))
-        dome.setColor(0.003, 0.005, 0.014, 1)
+            make_uv_sphere(STAR_RADIUS * 1.6, 48, 96, invert=True))
+        dome.setTexture(_load_texture(self.base, milkyway_path), 1)
+        dome.setColorScale(0.62, 0.66, 0.80, 1)   # dim a touch, keep it cool
         dome.setLightOff()
         dome.setShaderOff()
         dome.setDepthWrite(False)
@@ -119,10 +115,7 @@ class Scene:
 
     def _build_earth(self, tex_path):
         earth = self.base.render.attachNewNode(make_uv_sphere(EARTH_RADIUS, 96, 192))
-        tex = self.base.loader.loadTexture(Filename.fromOsSpecific(tex_path))
-        tex.setMinfilter(Texture.FTLinearMipmapLinear)
-        tex.setMagfilter(Texture.FTLinear)
-        earth.setTexture(tex, 1)
+        earth.setTexture(_load_texture(self.base, tex_path), 1)
         mat = Material("earth")
         mat.setBaseColor((1, 1, 1, 1))
         mat.setMetallic(0.0)
@@ -131,42 +124,12 @@ class Scene:
         earth.setPos(0, 0, EARTH_SURFACE_Z - EARTH_RADIUS)
         earth.setP(62)            # tilt so continents, not the pole, face up
         earth.setH(120)
-        # A dedicated fill just for the Earth so it stays bright and blue while
-        # the jet and sky keep a low, moody ambient.
+        # A dedicated fill just for the Earth so it stays readable while the jet
+        # and sky keep a low, moody ambient.
         earth_fill = AmbientLight("earth_fill")
         earth_fill.setColor((0.10, 0.12, 0.17, 1))
         earth.setLight(earth.attachNewNode(earth_fill))
         return earth
-
-    def _build_stars(self):
-        fmt = GeomVertexFormat.getV3c4()
-        vdata = GeomVertexData("stars", fmt, Geom.UHStatic)
-        vdata.setNumRows(STAR_COUNT)
-        vtx = GeomVertexWriter(vdata, "vertex")
-        col = GeomVertexWriter(vdata, "color")
-        pts = GeomPoints(Geom.UHStatic)
-        rng = random.Random(42)
-        for i in range(STAR_COUNT):
-            z = rng.uniform(-1, 1)
-            t = rng.uniform(0, 2 * math.pi)
-            r = math.sqrt(max(0.0, 1 - z * z))
-            vtx.addData3(r * math.cos(t) * STAR_RADIUS,
-                         r * math.sin(t) * STAR_RADIUS,
-                         z * STAR_RADIUS)
-            b = rng.uniform(0.35, 1.0) ** 1.5
-            col.addData4(b, b, b * rng.uniform(0.9, 1.15), 1)
-            pts.addVertex(i)
-        geom = Geom(vdata)
-        geom.addPrimitive(pts)
-        node = GeomNode("stars")
-        node.addGeom(geom)
-        np = self.base.render.attachNewNode(node)
-        np.setLightOff()
-        np.setBin("background", 2)
-        np.setDepthWrite(False)
-        np.setRenderModeThickness(1.6)
-        np.setShaderOff()
-        return np
 
     def _build_atmosphere(self):
         try:

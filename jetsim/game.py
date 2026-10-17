@@ -62,7 +62,11 @@ class JetSimApp(ShowBase):
             env_map=env_map,
         )
 
-        self.scene = Scene(self, os.path.join(_ASSETS, "earth_atmos_2048.jpg"))
+        self.scene = Scene(
+            self,
+            os.path.join(_ASSETS, "earth_day.jpg"),
+            os.path.join(_ASSETS, "milkyway.jpg"),
+        )
         self.jet, anchors = build_jet(self.render, os.path.join(_ASSETS, "su57.glb"))
         self.afterburner = Afterburner(self.render, anchors, textures.flame())
         self.flight = FlightModel(self.jet)
