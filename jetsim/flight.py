@@ -1,16 +1,15 @@
-"""Arcade flight model.
+"""Arcade flight model for open, high-altitude flight.
 
 Orientation changes are applied in the jet's own frame so pitch/roll/yaw compose
-the way a stick would. Forward motion follows the nose; a little gravity bleeds
-altitude when the jet gets slow, so speed has to be respected.
+the way a stick would, and forward motion follows the nose. There is no terrain
+up here - just a floor above the atmosphere and a ceiling.
 """
 
 from .config import (
     BOOST_SPEED,
-    GRAVITY,
-    GROUND_CLEARANCE,
-    LIFT_SPEED,
-    MAX_ALT,
+    CEILING_Z,
+    EARTH_SURFACE_Z,
+    FLOOR_Z,
     MAX_SPEED,
     MIN_SPEED,
     PITCH_RATE,
@@ -34,16 +33,16 @@ class Controls:
 
 
 class FlightModel:
-    def __init__(self, jet, terrain):
+    def __init__(self, jet):
         self.jet = jet
-        self.terrain = terrain
-        self.throttle = 0.6
+        self.throttle = 0.65
         self.speed = MIN_SPEED + (MAX_SPEED - MIN_SPEED) * self.throttle
         self.boosting = False
 
     @property
-    def altitude(self):
-        return self.jet.getZ()
+    def altitude_km(self):
+        # A cinematic "edge of space" readout derived from world height.
+        return 48.0 + (self.jet.getZ() - EARTH_SURFACE_Z - 430.0) / 22.0
 
     @property
     def heading(self):
@@ -51,11 +50,11 @@ class FlightModel:
 
     @property
     def mach(self):
-        return self.speed / 340.0
+        return self.speed / 300.0
 
     def reset(self):
-        self.jet.setPosHpr(0, -220, START_ALT, 0, 0, 0)
-        self.throttle = 0.6
+        self.jet.setPosHpr(0, -260, START_ALT, 0, 0, 0)
+        self.throttle = 0.65
         self.speed = MIN_SPEED + (MAX_SPEED - MIN_SPEED) * self.throttle
         self.boosting = False
 
@@ -70,36 +69,11 @@ class FlightModel:
         )
         self.speed += (target - self.speed) * min(1.0, dt * 0.8)
 
-        # Rotate in the jet's local frame.
         self.jet.setP(self.jet, controls.pitch * PITCH_RATE * dt)
         self.jet.setR(self.jet, controls.roll * ROLL_RATE * dt)
         self.jet.setH(self.jet, -controls.yaw * YAW_RATE * dt)
 
-        quat = self.jet.getQuat()
         pos = self.jet.getPos()
-        pos += quat.getForward() * self.speed * dt
-
-        # Gravity, countered by airspeed.
-        lift = clamp(self.speed / LIFT_SPEED, 0.0, 1.0)
-        pos.setZ(pos.getZ() - GRAVITY * (1.0 - lift) * dt)
-
-        self._wrap(pos)
-
-        ground = self.terrain.elevation(pos.getX(), pos.getY())
-        if pos.getZ() < ground + GROUND_CLEARANCE:
-            pos.setZ(ground + GROUND_CLEARANCE)
-        if pos.getZ() > MAX_ALT:
-            pos.setZ(MAX_ALT)
-
+        pos += self.jet.getQuat().getForward() * self.speed * dt
+        pos.setZ(clamp(pos.getZ(), FLOOR_Z, CEILING_Z))
         self.jet.setPos(pos)
-
-    def _wrap(self, pos):
-        limit = self.terrain.half_extent - 60.0
-        if pos.getX() > limit:
-            pos.setX(-limit)
-        elif pos.getX() < -limit:
-            pos.setX(limit)
-        if pos.getY() > limit:
-            pos.setY(-limit)
-        elif pos.getY() < -limit:
-            pos.setY(limit)
