@@ -1,27 +1,27 @@
-"""The Panda3D application that ties the jet, world, physics and HUD together."""
+"""The Panda3D application: Su-57 jet, edge-of-space world, physics and HUD."""
 
-import random
+import os
 import sys
 
 from direct.showbase.ShowBase import ShowBase
-from panda3d.core import (
-    AntialiasAttrib,
-    CardMaker,
-    ClockObject,
-    TransparencyAttrib,
-    loadPrcFileData,
-)
+from panda3d.core import AntialiasAttrib, ClockObject, loadPrcFileData
 
-from .config import BASE_FOV, CAM_DISTANCE, CAM_HEIGHT, CAM_LAG, MAX_FOV, BOOST_SPEED
+from .config import (
+    BASE_FOV,
+    BOOST_SPEED,
+    CAM_DISTANCE,
+    CAM_HEIGHT,
+    CAM_LAG,
+    MAX_FOV,
+)
 from .effects import Afterburner, setup_bloom
 from .flight import Controls, FlightModel
 from .hud import Hud
 from .jet import build_jet
-from .sky import setup_lights, setup_sky
-from .terrain import Terrain
+from .scene import Scene
 from . import textures
 
-loadPrcFileData("", "window-title Afterburner - Fighter Jet Simulator")
+loadPrcFileData("", "window-title Afterburner - Su-57 Edge of Space")
 loadPrcFileData("", "win-size 1280 720")
 loadPrcFileData("", "framebuffer-multisample 1")
 loadPrcFileData("", "multisamples 4")
@@ -29,6 +29,7 @@ loadPrcFileData("", "sync-video #f")
 loadPrcFileData("", "show-frame-rate-meter #t")
 
 _CLOCK = ClockObject.getGlobalClock()
+_ASSETS = os.path.join(os.path.dirname(os.path.dirname(__file__)), "assets")
 
 
 class JetSimApp(ShowBase):
@@ -36,48 +37,19 @@ class JetSimApp(ShowBase):
         ShowBase.__init__(self)
         self.disableMouse()
         self.render.setAntialias(AntialiasAttrib.MAuto)
-        self.camLens.setNearFar(0.5, 7000)
+        self.camLens.setNearFar(0.5, 40000)
 
-        flame_tex = textures.flame()
-        sun_tex = textures.puff()
-        cloud_tex = textures.puff()
-        sky_tex = textures.gradient_sky()
-
-        setup_lights(self.render)
-        self.sky = setup_sky(self, sky_tex, sun_tex)
-        self.terrain = Terrain(self.render)
-        self.jet, anchors = build_jet(self.render)
-        self.afterburner = Afterburner(self.render, anchors, flame_tex)
-        self.flight = FlightModel(self.jet, self.terrain)
+        self.scene = Scene(self, os.path.join(_ASSETS, "earth_atmos_2048.jpg"))
+        self.jet, anchors = build_jet(self.render, os.path.join(_ASSETS, "su57.glb"))
+        self.afterburner = Afterburner(self.render, anchors, textures.flame())
+        self.flight = FlightModel(self.jet)
         self.flight.reset()
-        self._make_clouds(cloud_tex)
         self.hud = Hud(self)
         self.filters = setup_bloom(self)
 
         self._snap_camera()
         self._bind_keys()
         self.taskMgr.add(self._update, "update")
-
-    # -- world dressing ----------------------------------------------------
-    def _make_clouds(self, cloud_tex, count=22):
-        rng = random.Random(7)
-        extent = self.terrain.half_extent - 200
-        cm = CardMaker("cloud")
-        cm.setFrame(-1, 1, -1, 1)
-        for _ in range(count):
-            cloud = self.render.attachNewNode(cm.generate())
-            cloud.setTexture(cloud_tex, 1)
-            cloud.setBillboardPointEye()
-            cloud.setTransparency(TransparencyAttrib.MAlpha)
-            cloud.setLightOff()
-            cloud.setDepthWrite(False)
-            cloud.setPos(
-                rng.uniform(-extent, extent),
-                rng.uniform(-extent, extent),
-                rng.uniform(420, 780),
-            )
-            cloud.setScale(rng.uniform(90, 200))
-            cloud.setColor(1, 1, 1, rng.uniform(0.35, 0.6))
 
     # -- input -------------------------------------------------------------
     def _bind_keys(self):
@@ -123,17 +95,17 @@ class JetSimApp(ShowBase):
     def _snap_camera(self):
         pos, quat = self._desired_camera()
         self.camera.setPos(pos)
-        self.camera.lookAt(self.jet.getPos() + quat.getForward() * 25, quat.getUp())
+        self.camera.lookAt(self.jet.getPos() + quat.getForward() * 30, quat.getUp())
 
     def _update_camera(self, dt):
         pos, quat = self._desired_camera()
         cur = self.camera.getPos()
         self.camera.setPos(cur + (pos - cur) * min(1.0, dt * CAM_LAG))
         self.camera.lookAt(
-            self.jet.getPos() + quat.getForward() * 25 + quat.getUp() * 2,
+            self.jet.getPos() + quat.getForward() * 30 + quat.getUp() * 3,
             quat.getUp(),
         )
-        fov = BASE_FOV + (self.flight.speed / BOOST_SPEED) * 26.0
+        fov = BASE_FOV + (self.flight.speed / BOOST_SPEED) * 22.0
         self.camLens.setFov(min(fov, MAX_FOV))
 
     # -- main loop ---------------------------------------------------------
@@ -142,6 +114,6 @@ class JetSimApp(ShowBase):
         self.flight.update(dt, self._read_controls())
         self.afterburner.update(self.flight.throttle, self.flight.boosting)
         self._update_camera(dt)
-        self.terrain.update(self.camera)
+        self.scene.update(dt, self.camera.getPos())
         self.hud.update(self.flight)
         return task.cont
